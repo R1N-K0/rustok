@@ -45,7 +45,7 @@ jobs:
       - name: Package (unix)
         if: runner.os != 'Windows'
         run: |
-          staging="tok-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          staging="rustok-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir "$staging"
           cp target/${{ matrix.target }}/release/tok "$staging/"
           cp README.md LICENSE-MIT LICENSE-APACHE "$staging/"
@@ -56,7 +56,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $staging = "tok-$env:GITHUB_REF_NAME-${{ matrix.target }}"
+          $staging = "rustok-$env:GITHUB_REF_NAME-${{ matrix.target }}"
           New-Item -ItemType Directory $staging | Out-Null
           Copy-Item "target/${{ matrix.target }}/release/tok.exe" $staging
           Copy-Item README.md, LICENSE-MIT, LICENSE-APACHE $staging

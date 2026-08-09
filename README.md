@@ -1,6 +1,7 @@
-# tok
+# rustok
 
 **Count OpenAI tokens in files, directories and stdin — fast.**
+Installs as the `tok` command.
 
 [![CI](https://github.com/R1N-K0/rustok/actions/workflows/ci.yml/badge.svg)](https://github.com/R1N-K0/rustok/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/rustok.svg)](https://crates.io/crates/rustok)
@@ -38,8 +39,9 @@ and files are read in parallel.
 cargo install rustok
 ```
 
-The crate is published as `rustok` — `tok` was already taken on crates.io — but the
-installed command is `tok`.
+The project is `rustok`; the command it installs is `tok`, which is what you type.
+(Same split as `fd-find`/`fd` and `du-dust`/`dust` — the short name was already taken
+on crates.io.)
 
 Or grab a prebuilt binary for Linux, macOS or Windows from the
 [releases page](https://github.com/R1N-K0/rustok/releases).
