@@ -24,7 +24,7 @@ TOKENS                FILE
  1,307  ████░░░░░░░░  src/input.rs
    787  ███░░░░░░░░░  src/main.rs
 ──────────────────────────────────────────────
-12,609  tokens in 7 files · 47.9 KiB
+12,609  tokens in 7 files · 48.0 KiB
         gpt-5 (o200k_base) · 3.2% of 400,000 context
 ```
 
@@ -109,10 +109,10 @@ $ tok src/ --format json
   "encoding": "o200k_base",
   "context_window": 400000,
   "total_tokens": 12609,
-  "total_bytes": 49098,
+  "total_bytes": 49107,
   "context_used": 0.032,
   "files": [
-    { "path": "src/output.rs", "tokens": 3564, "bytes": 13374, "lines": 421 }
+    { "path": "src/output.rs", "tokens": 3564, "bytes": 13383, "lines": 421 }
   ],
   "skipped_binary": [],
   "failed": []
