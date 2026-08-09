@@ -55,5 +55,5 @@ Sleep 300ms
 Type "tok src/ --quiet" Sleep 300ms Enter
 Sleep 1.5s
 
-Type "tok src/ --limit 8000; echo \"exit=$?\"" Sleep 400ms Enter
+Type 'tok src/ --limit 8000; echo "exit=$?"' Sleep 400ms Enter
 Sleep 3s
