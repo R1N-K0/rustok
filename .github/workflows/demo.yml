@@ -1,0 +1,39 @@
+name: Demo GIF
+
+# Renders assets/demo.tape into assets/demo.gif and commits the result.
+# Run it from the Actions tab, or let it fire whenever the tape changes.
+# VHS needs a real terminal, so this is easiest on Linux CI rather than locally.
+on:
+  workflow_dispatch:
+  push:
+    paths: ["assets/demo.tape"]
+
+permissions:
+  contents: write
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build the binary the tape records
+        run: cargo build --release --locked
+
+      - uses: charmbracelet/vhs-action@v2
+        with:
+          path: assets/demo.tape
+
+      - name: Commit the GIF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- assets/demo.gif; then
+            echo "demo.gif unchanged"
+            exit 0
+          fi
+          git add assets/demo.gif
+          git commit -m "chore: regenerate demo.gif"
+          git push

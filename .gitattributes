@@ -1,0 +1,6 @@
+# Normalise to LF in the repository; checkouts still get native endings where
+# the platform wants them.
+* text=auto eol=lf
+
+*.gif binary
+*.png binary
