@@ -6,6 +6,8 @@ name: Demo GIF
 on:
   workflow_dispatch:
   push:
+    # Only main, so two branches never race to commit the same GIF.
+    branches: [main]
     paths:
       - "assets/demo.tape"
       - ".github/workflows/demo.yml"
@@ -51,10 +53,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- assets/demo.gif; then
+          # Stage first: `git diff` alone cannot see a GIF that is still
+          # untracked, which silently turned the very first render into a no-op.
+          git add assets/demo.gif
+          if git diff --cached --quiet; then
             echo "demo.gif unchanged"
             exit 0
           fi
-          git add assets/demo.gif
           git commit -m "chore: regenerate demo.gif"
           git push

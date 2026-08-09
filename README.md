@@ -11,7 +11,7 @@ Installs as the `tok` command.
 context window. `tok` is the missing `wc` for that unit — point it at a repository and
 find out what actually fits.
 
-![tok in action](assets/demo.gif)
+![tok in action](https://raw.githubusercontent.com/R1N-K0/rustok/main/assets/demo.gif)
 
 ```console
 $ tok src/
