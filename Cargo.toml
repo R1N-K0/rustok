@@ -2,7 +2,9 @@
 name = "rustok"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+# 1.88 for let chains: tiktoken-rs 0.12 uses them while still declaring 1.85,
+# so our floor is set by what actually compiles, not by what it advertises.
+rust-version = "1.88"
 description = "Fast OpenAI token counter for files, directories and stdin"
 authors = ["R1N-K0"]
 license = "MIT OR Apache-2.0"

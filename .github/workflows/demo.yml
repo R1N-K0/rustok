@@ -6,10 +6,16 @@ name: Demo GIF
 on:
   workflow_dispatch:
   push:
-    paths: ["assets/demo.tape"]
+    paths:
+      - "assets/demo.tape"
+      - ".github/workflows/demo.yml"
 
 permissions:
   contents: write
+
+env:
+  VHS_VERSION: "0.11.0"
+  TTYD_VERSION: "1.7.7"
 
 jobs:
   demo:
@@ -22,9 +28,24 @@ jobs:
       - name: Build the binary the tape records
         run: cargo build --release --locked
 
-      - uses: charmbracelet/vhs-action@v2
-        with:
-          path: assets/demo.tape
+      # Installed by hand rather than via charmbracelet/vhs-action, whose
+      # bundled ffmpeg downloader fetches from a third-party release feed and
+      # breaks when that feed moves. apt and the upstream releases are stable.
+      - name: Install VHS and its dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-jetbrains-mono
+          sudo curl -fsSL -o /usr/local/bin/ttyd \
+            "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64"
+          sudo chmod +x /usr/local/bin/ttyd
+          mkdir -p /tmp/vhs
+          curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VHS_VERSION}/vhs_${VHS_VERSION}_Linux_x86_64.tar.gz" \
+            | tar xz -C /tmp/vhs
+          sudo install -m755 "$(find /tmp/vhs -name vhs -type f | head -1)" /usr/local/bin/vhs
+          vhs --version
+
+      - name: Render the tape
+        run: vhs assets/demo.tape
 
       - name: Commit the GIF
         run: |
