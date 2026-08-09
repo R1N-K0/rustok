@@ -16,15 +16,15 @@ find out what actually fits.
 ```console
 $ tok src/
 TOKENS                FILE
- 3,422  ████████████  src/output.rs
- 2,259  ████████░░░░  src/encoding.rs
- 2,038  ███████░░░░░  src/show.rs
- 1,532  █████░░░░░░░  src/cli.rs
- 1,410  █████░░░░░░░  src/count.rs
- 1,307  █████░░░░░░░  src/input.rs
-   794  ███░░░░░░░░░  src/main.rs
+ 3,564  ████████████  src/output.rs
+ 2,257  ████████░░░░  src/encoding.rs
+ 1,803  ██████░░░░░░  src/show.rs
+ 1,511  █████░░░░░░░  src/cli.rs
+ 1,380  █████░░░░░░░  src/count.rs
+ 1,307  ████░░░░░░░░  src/input.rs
+   787  ███░░░░░░░░░  src/main.rs
 ──────────────────────────────────────────────
-12,762  tokens in 7 files · 48.8 KiB
+12,609  tokens in 7 files · 47.9 KiB
         gpt-5 (o200k_base) · 3.2% of 400,000 context
 ```
 
@@ -56,12 +56,15 @@ $ tok -t 'hello world'             # a literal string
 $ tok                              # no args: reads stdin
 ```
 
-Every count reports which encoding produced it, and how much of the model's context it
-would consume:
+Every count says which encoding produced it, and — once the total is big enough to
+register — how much of the model's context window it would fill:
 
 ```console
 $ tok -t 'hello world'
-2 tokens · gpt-5 (o200k_base) · 0.0% of 400,000 context
+2 tokens · gpt-5 (o200k_base)
+
+$ tok src/main.rs
+787 tokens · gpt-5 (o200k_base) · 0.2% of 400,000 context
 ```
 
 ### Pick a model or an encoding
@@ -80,13 +83,13 @@ Dated and fine-tuned names work too — `gpt-4o-2024-05-13`, `ft:gpt-4o:acme:tun
 ### See the tokens, not just the count
 
 `--show` paints each token in its own colour. Multi-byte text is handled properly:
-a token holding half a Japanese character is merged with its neighbour instead of
-rendering as `�`.
+a token holding only part of an emoji or accented character is merged with its
+neighbour instead of rendering as `�`.
 
 ```console
-$ tok -t 'こんにちは、世界！Hello 🎉' --show
-こんにちは、世界！Hello 🎉
-── 7 tokens · 16 chars
+$ tok -t 'Ship it 🚀' --show
+Ship it 🚀
+── 4 tokens · 9 chars
 ```
 
 ```console
@@ -105,11 +108,11 @@ $ tok src/ --format json
   "model": "gpt-5",
   "encoding": "o200k_base",
   "context_window": 400000,
-  "total_tokens": 12762,
-  "total_bytes": 49944,
+  "total_tokens": 12609,
+  "total_bytes": 49098,
   "context_used": 0.032,
   "files": [
-    { "path": "src/output.rs", "tokens": 3422, "bytes": 12897, "lines": 420 }
+    { "path": "src/output.rs", "tokens": 3564, "bytes": 13374, "lines": 421 }
   ],
   "skipped_binary": [],
   "failed": []
@@ -121,7 +124,7 @@ prints the bare number and nothing else:
 
 ```console
 $ tok src/ --quiet
-12762
+12609
 ```
 
 ### Guard a budget in CI
@@ -132,7 +135,7 @@ pre-commit hook or a CI job:
 ```console
 $ tok prompts/ --limit 8000
 ...
-over limit: 12,762 tokens exceeds the limit of 8,000 (+4,762)
+over limit: 12,609 tokens (limit 8,000, +4,609)
 $ echo $?
 1
 ```
@@ -173,7 +176,6 @@ $ tok . --sort path                # or size, tokens, none
 | `--exclude <GLOB>` | Skip matching paths (repeatable) |
 | `--hidden` | Include hidden files |
 | `--no-ignore` | Ignore `.gitignore` and friends |
-| `--binary` | Do not skip binary files |
 | `--follow` | Follow symlinks |
 | `--special` | Parse `<\|endoftext\|>` as one token instead of literal text |
 | `-j, --threads <N>` | Thread count (`0` = one per core) |

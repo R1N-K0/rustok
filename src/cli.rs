@@ -143,10 +143,6 @@ pub struct WalkArgs {
     #[arg(long)]
     pub no_ignore: bool,
 
-    /// Count binary files instead of skipping them
-    #[arg(long)]
-    pub binary: bool,
-
     /// Only count files with this extension (repeatable)
     #[arg(long, value_name = "EXT")]
     pub ext: Vec<String>,

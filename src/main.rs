@@ -7,7 +7,7 @@ mod input;
 mod output;
 mod show;
 
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::ExitCode;
 
 use anstream::eprintln;
@@ -62,15 +62,16 @@ fn run() -> Result<ExitCode> {
             )?;
             let raw = if args.ids.is_empty() {
                 let mut buf = String::new();
-                std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)?;
+                std::io::stdin().read_to_string(&mut buf)?;
                 vec![buf]
             } else {
                 args.ids
             };
             let text = show::decode(&enc, &raw)?;
             // Write raw bytes: decoded text is data, not a message.
-            std::io::stdout().write_all(text.as_bytes())?;
-            std::io::stdout().flush()?;
+            let mut stdout = std::io::stdout();
+            stdout.write_all(text.as_bytes())?;
+            stdout.flush()?;
             Ok(ExitCode::SUCCESS)
         }
         None => run_count(cli.count),
@@ -99,7 +100,7 @@ fn run_count(args: CountArgs) -> Result<ExitCode> {
         if total > limit {
             let style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Red)));
             eprintln!(
-                "{style}over limit{style:#}: {} tokens exceeds the limit of {} (+{})",
+                "{style}over limit{style:#}: {} tokens (limit {}, +{})",
                 output::thousands(total as u64),
                 output::thousands(limit as u64),
                 output::thousands((total - limit) as u64),

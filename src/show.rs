@@ -9,47 +9,37 @@ use crate::encoding::Encoder;
 use crate::input::Item;
 use crate::output::thousands;
 
-/// Background colours cycled across tokens. Chosen to stay legible on both
-/// light and dark terminals, with an explicit foreground so neither inverts.
-const PALETTE: [(u8, u8); 5] = [(153, 0), (150, 0), (223, 0), (218, 0), (159, 0)];
+const DIM: Style = Style::new().dimmed();
+const BOLD: Style = Style::new().bold();
 
-/// One contiguous run of tokens that forms valid UTF-8 on its own.
-struct Group {
-    text: String,
-    tokens: usize,
-}
+/// Background colours cycled across tokens, chosen to stay legible on both
+/// light and dark terminals. The foreground is pinned to black so a terminal
+/// with its own bright/dark scheme cannot invert the text into the background.
+const PALETTE: [u8; 5] = [153, 150, 223, 218, 159];
+const PALETTE_FG: u8 = 0;
 
-/// Split a token stream into printable groups.
+/// Split a token stream into printable groups, each valid UTF-8 on its own.
 ///
-/// A single token can hold a partial UTF-8 sequence — very common for Japanese,
-/// emoji and other multi-byte text — so tokens are merged until the accumulated
+/// A single token can hold a partial UTF-8 sequence — very common for emoji,
+/// CJK and other multi-byte text — so tokens are merged until the accumulated
 /// bytes decode cleanly. Without this, every such token renders as `�`.
-fn group_tokens(enc: &Encoder, ids: &[u32]) -> Result<Vec<Group>> {
+fn group_tokens(enc: &Encoder, ids: &[u32]) -> Result<Vec<String>> {
     let mut groups = Vec::new();
-    let mut pending: Vec<u32> = Vec::new();
     let mut bytes: Vec<u8> = Vec::new();
 
     for &id in ids {
-        pending.push(id);
         bytes.extend_from_slice(&enc.decode(&[id])?);
 
         if let Ok(text) = std::str::from_utf8(&bytes) {
-            groups.push(Group {
-                text: text.to_string(),
-                tokens: pending.len(),
-            });
-            pending.clear();
+            groups.push(text.to_string());
             bytes.clear();
         }
     }
 
     // Trailing bytes that never completed a character: show them lossily rather
     // than dropping tokens from the display.
-    if !pending.is_empty() {
-        groups.push(Group {
-            text: String::from_utf8_lossy(&bytes).into_owned(),
-            tokens: pending.len(),
-        });
+    if !bytes.is_empty() {
+        groups.push(String::from_utf8_lossy(&bytes).into_owned());
     }
 
     Ok(groups)
@@ -61,19 +51,17 @@ pub fn show(enc: &Encoder, label: &str, text: &str, with_header: bool) -> Result
     let groups = group_tokens(enc, &ids)?;
 
     if with_header {
-        let dim = Style::new().dimmed();
-        println!("{dim}── {label}{dim:#}");
+        println!("{DIM}── {label}{DIM:#}");
     }
 
     for (i, group) in groups.iter().enumerate() {
-        let (bg, fg) = PALETTE[i % PALETTE.len()];
         let style = Style::new()
-            .bg_color(Some(Color::Ansi256(bg.into())))
-            .fg_color(Some(Color::Ansi256(fg.into())));
+            .bg_color(Some(Color::Ansi256(PALETTE[i % PALETTE.len()].into())))
+            .fg_color(Some(Color::Ansi256(PALETTE_FG.into())));
 
         // Reset before every newline, otherwise the background bleeds to the
         // end of the terminal line.
-        let mut lines = group.text.split('\n');
+        let mut lines = group.split('\n');
         if let Some(first) = lines.next() {
             print!("{style}{first}{style:#}");
         }
@@ -84,23 +72,8 @@ pub fn show(enc: &Encoder, label: &str, text: &str, with_header: bool) -> Result
     }
     println!();
 
-    let dim = Style::new().dimmed();
-    let bold = Style::new().bold();
-    let merged = groups.iter().filter(|g| g.tokens > 1).count();
-    let note = if merged > 0 {
-        format!(
-            " {dim}({merged} multi-byte {} span more than one token){dim:#}",
-            if merged == 1 {
-                "character"
-            } else {
-                "characters"
-            }
-        )
-    } else {
-        String::new()
-    };
     println!(
-        "{dim}──{dim:#} {bold}{}{bold:#} tokens {dim}·{dim:#} {} chars{note}",
+        "{DIM}──{DIM:#} {BOLD}{}{BOLD:#} tokens {DIM}·{DIM:#} {} chars",
         thousands(ids.len() as u64),
         thousands(text.chars().count() as u64),
     );
@@ -117,24 +90,22 @@ pub fn ids(
 ) -> Result<()> {
     let ids = enc.encode(text);
 
-    match format {
-        Format::Json => {
-            println!("{}", serde_json::to_string(&ids)?);
-        }
-        Format::Csv | Format::Tsv => {
-            let sep = if format == Format::Csv { "," } else { "\t" };
-            let joined: Vec<String> = ids.iter().map(|id| id.to_string()).collect();
-            println!("{}", joined.join(sep));
-        }
-        Format::Table => {
-            if with_header {
-                let dim = Style::new().dimmed();
-                println!("{dim}── {label}{dim:#}");
-            }
-            let joined: Vec<String> = ids.iter().map(|id| id.to_string()).collect();
-            println!("{}", joined.join(" "));
-        }
+    if format == Format::Json {
+        println!("{}", serde_json::to_string(&ids)?);
+        return Ok(());
     }
+
+    if format == Format::Table && with_header {
+        println!("{DIM}── {label}{DIM:#}");
+    }
+
+    let sep = match format {
+        Format::Csv => ",",
+        Format::Tsv => "\t",
+        _ => " ",
+    };
+    let joined: Vec<String> = ids.iter().map(|id| id.to_string()).collect();
+    println!("{}", joined.join(sep));
     Ok(())
 }
 
@@ -206,10 +177,9 @@ mod tests {
         let enc = enc();
         let ids = enc.encode("hello world");
         let groups = group_tokens(&enc, &ids).unwrap();
+        // Every ASCII token decodes on its own, so nothing is merged.
         assert_eq!(groups.len(), ids.len());
-        assert!(groups.iter().all(|g| g.tokens == 1));
-        let joined: String = groups.iter().map(|g| g.text.as_str()).collect();
-        assert_eq!(joined, "hello world");
+        assert_eq!(groups.concat(), "hello world");
     }
 
     #[test]
@@ -219,11 +189,11 @@ mod tests {
         let ids = enc.encode(text);
         let groups = group_tokens(&enc, &ids).unwrap();
 
-        let joined: String = groups.iter().map(|g| g.text.as_str()).collect();
+        let joined = groups.concat();
         assert_eq!(joined, text);
         assert!(!joined.contains('\u{fffd}'));
-        // Grouping must preserve the true token count.
-        assert_eq!(groups.iter().map(|g| g.tokens).sum::<usize>(), ids.len());
+        // Merging happened: fewer groups than tokens, but no text was lost.
+        assert!(groups.len() < ids.len());
     }
 
     #[test]

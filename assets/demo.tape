@@ -39,7 +39,7 @@ Type "clear" Enter
 Sleep 300ms
 
 # 3. Token boundaries, including multi-byte text.
-Type "tok -t 'こんにちは、世界！Hello 🎉' --show" Sleep 400ms Enter
+Type "tok -t 'Ship it 🚀 — naïve café' --show" Sleep 400ms Enter
 Sleep 3.5s
 
 Type "tok -t 'hello world' --ids" Sleep 300ms Enter

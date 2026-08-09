@@ -47,24 +47,20 @@ impl Report {
 ///
 /// `threads` of 0 means "let rayon decide".
 pub fn count_all(items: Vec<Item>, enc: &Encoder, threads: usize) -> Result<Report> {
-    let outcomes: Vec<Outcome> = if threads == 1 {
-        items.into_iter().map(|item| count_one(item, enc)).collect()
+    let run = || -> Vec<Outcome> {
+        items
+            .into_par_iter()
+            .map(|item| count_one(item, enc))
+            .collect()
+    };
+    let outcomes = if threads == 0 {
+        run()
     } else {
-        let run = || {
-            items
-                .into_par_iter()
-                .map(|item| count_one(item, enc))
-                .collect()
-        };
-        if threads == 0 {
-            run()
-        } else {
-            rayon::ThreadPoolBuilder::new()
-                .num_threads(threads)
-                .build()
-                .context("failed to start the thread pool")?
-                .install(run)
-        }
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .build()
+            .context("failed to start the thread pool")?
+            .install(run)
     };
 
     let mut report = Report {

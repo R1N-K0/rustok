@@ -30,7 +30,7 @@ pub fn thousands(n: u64) -> String {
 }
 
 /// Byte counts as `1.4 KiB`, keeping whole bytes exact.
-pub fn human_bytes(n: u64) -> String {
+fn human_bytes(n: u64) -> String {
     const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
     if n < 1024 {
         return format!("{n} B");
@@ -45,7 +45,7 @@ pub fn human_bytes(n: u64) -> String {
 }
 
 /// Order and trim the rows according to `--by-ext`, `--sort`, `--reverse` and `--top`.
-pub fn prepare_rows(report: &Report, args: &CountArgs) -> (Vec<FileStat>, usize, usize) {
+fn prepare_rows(report: &Report, args: &CountArgs) -> (Vec<FileStat>, usize, usize) {
     let mut rows = if args.by_ext {
         by_extension(&report.stats)
     } else {
@@ -162,12 +162,16 @@ fn context_line(total: usize, enc: &Encoder) -> String {
     // to "how many times over" instead.
     let fit = if ratio > 1.0 {
         format!("{ratio:.1}× the {} token context", thousands(window as u64))
-    } else {
+    } else if ratio >= 0.0005 {
         format!(
             "{:.1}% of {} context",
             ratio * 100.0,
             thousands(window as u64)
         )
+    } else {
+        // Too small to register as a fraction of the window: "0.0% of 400,000
+        // context" is noise on a one-line input.
+        return enc.label();
     };
     format!("{} · {fit}", enc.label())
 }
@@ -386,6 +390,13 @@ mod tests {
         let enc = Encoder::resolve(Some("gpt-4o"), None, false).unwrap(); // 128k window
         assert!(context_line(12_800, &enc).contains("10.0% of 128,000 context"));
         assert!(context_line(1_280_000, &enc).contains("10.0× the 128,000 token context"));
+    }
+
+    #[test]
+    fn context_line_drops_a_fraction_that_rounds_to_zero() {
+        let enc = Encoder::resolve(Some("gpt-4o"), None, false).unwrap(); // 128k window
+        assert_eq!(context_line(2, &enc), "gpt-4o (o200k_base)");
+        assert!(context_line(64, &enc).contains("0.1% of"));
     }
 
     #[test]

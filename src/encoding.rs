@@ -7,7 +7,7 @@ use tiktoken_rs::tokenizer::{Tokenizer, get_tokenizer};
 use tiktoken_rs::{CoreBPE, Rank, bpe_for_tokenizer};
 
 /// Model assumed when the user names neither a model nor an encoding.
-pub const DEFAULT_MODEL: &str = "gpt-5";
+const DEFAULT_MODEL: &str = "gpt-5";
 
 /// Encodings that can be selected directly with `--encoding`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
@@ -43,7 +43,7 @@ impl From<EncodingArg> for Tokenizer {
 }
 
 /// Canonical tiktoken name of an encoding, as used by OpenAI's Python library.
-pub fn encoding_name(tokenizer: Tokenizer) -> &'static str {
+fn encoding_name(tokenizer: Tokenizer) -> &'static str {
     match tokenizer {
         Tokenizer::O200kHarmony => "o200k_harmony",
         Tokenizer::O200kBase => "o200k_base",
